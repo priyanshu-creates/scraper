@@ -1,0 +1,29 @@
+Colors
+Primary:
+#A9A4C0
+Accent:
+#010315
+Background:
+#010315
+Text Primary:
+#010315
+Link:
+#010315
+Fonts
+SF Pro Display(body)
+Typography
+primary: SF Pro Display
+heading: SF Pro Display
+h1: 38px
+h2: 54px
+body: 18px
+Spacing
+Base Unit:
+4
+Border Radius:
+15px
+Personality
+Tone: professional
+Energy: medium
+Audience: tech-savvy individuals seeking online privacy and security
+

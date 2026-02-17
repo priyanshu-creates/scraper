@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI News Dashboard - Latest from Ben's Bites & AI Rundown</title>
+    <meta name="description"
+        content="Beautiful dashboard displaying the latest AI news from Ben's Bites and The Rundown AI. Stay updated with cutting-edge AI developments.">
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="container">
+            <div class="header-content">
+                <div class="logo-section">
+                    <img src="Design guidelines/logo.png" alt="Logo" class="logo">
+                    <h1>AI News Dashboard</h1>
+                </div>
+                <div class="stats-bar">
+                    <div class="stat">
+                        <span class="stat-label">Total</span>
+                        <span class="stat-value" id="total-count">0</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-label">New (24h)</span>
+                        <span class="stat-value stat-new" id="new-count">0</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main">
+        <div class="container">
+            <!-- Toolbar -->
+            <div class="toolbar">
+                <div class="filters">
+                    <button class="filter-btn active" data-filter="all">All Sources</button>
+                    <button class="filter-btn" data-filter="bens_bites">Ben's Bites</button>
+                    <button class="filter-btn" data-filter="ai_rundown">AI Rundown</button>
+                    <button class="filter-btn" data-filter="saved">Saved Articles</button>
+                </div>
+                <div class="search-container">
+                    <input type="text" id="search-input" placeholder="Search articles..." class="search-input">
+                </div>
+            </div>
+
+            <!-- Articles Grid -->
+            <div class="articles-grid" id="articles-grid">
+                <!-- Articles will be dynamically loaded here -->
+                <div class="loading">
+                    <div class="loading-spinner"></div>
+                    <p id="loading-text">Loading latest AI news...</p>
+                    <div id="debug-log"
+                        style="color: #666; font-size: 12px; margin-top: 10px; font-family: monospace; text-align: left; max-width: 400px; margin: 10px auto;">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <p>Last updated: <span id="last-updated">--</span></p>
+            <p>Data sources: <a href="https://www.bensbites.com" target="_blank" rel="noopener">Ben's Bites</a> | <a
+                    href="https://www.therundown.ai" target="_blank" rel="noopener">The Rundown AI</a></p>
+        </div>
+    </footer>
+
+    <!-- Supabase JS Client -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"
+        onerror="document.getElementById('loading-text').textContent = '⚠️ Failed to load Supabase library (CDN error). Check internet/adblocker.'; document.getElementById('loading-text').style.color = 'red';"></script>
+    <script src="app.js"></script>
+</body>
+
+</html>
