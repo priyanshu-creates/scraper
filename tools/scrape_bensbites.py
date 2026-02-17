@@ -1,10 +1,9 @@
 """
-Ben's Bites Scraper
-Scrapes latest AI news articles from Ben's Bites (Substack)
+Ben's Bites Scraper (RSS)
+Scrapes latest AI news articles from Ben's Bites via RSS Feed
 """
 
-import requests
-from bs4 import BeautifulSoup
+import feedparser
 from datetime import datetime, timedelta
 import json
 import time
@@ -12,102 +11,80 @@ from dateutil import parser as date_parser
 
 # Configuration
 SOURCE_NAME = "bens_bites"
-BASE_URL = "https://www.bensbites.com"
+RSS_URL = "https://www.bensbites.com/feed"
 USER_AGENT = "AI-News-Dashboard/1.0 (Educational Project)"
-RATE_LIMIT_DELAY = 1  # seconds between requests
-MAX_RETRIES = 3
 
 def get_cutoff_time():
     """Calculate 24-hour cutoff time"""
     return datetime.now() - timedelta(hours=24)
 
-def fetch_page(url, retries=0):
-    """Fetch page with retry logic"""
-    try:
-        headers = {"User-Agent": USER_AGENT}
-        response = requests.get(url, headers=headers, timeout=10)
-        response.raise_for_status()
-        return response.text
-    except requests.RequestException as e:
-        if retries < MAX_RETRIES:
-            wait_time = 2 ** retries  # Exponential backoff
-            print(f"Error fetching {url}: {e}. Retrying in {wait_time}s...")
-            time.sleep(wait_time)
-            return fetch_page(url, retries + 1)
-        else:
-            print(f"Failed to fetch {url} after {MAX_RETRIES} retries: {e}")
-            return None
-
-def parse_articles(html):
-    """Parse articles from Ben's Bites HTML"""
-    soup = BeautifulSoup(html, 'html.parser')
-    articles = []
-    
-    # Find article links (Substack structure)
-    # Look for post listings - adjust selectors based on actual structure
-    post_links = soup.find_all('a', class_='post-preview-title')
-    
-    if not post_links:
-        # Fallback: try finding any links in article containers
-        post_links = soup.find_all('a', href=lambda x: x and '/p/' in x)
-    
-    cutoff = get_cutoff_time()
-    
-    for link in post_links:
-        try:
-            title = link.get_text(strip=True)
-            url = link.get('href')
-            
-            # Ensure absolute URL
-            if url and not url.startswith('http'):
-                url = BASE_URL + url
-            
-            # Try to find published date (may need adjustment)
-            date_elem = link.find_parent().find('time')
-            published_date = None
-            
-            if date_elem and date_elem.get('datetime'):
-                try:
-                    published_date = date_parser.parse(date_elem['datetime'])
-                except:
-                    pass
-            
-            # If no date found or date is within 24h, include article
-            if not published_date or published_date >= cutoff:
-                article = {
-                    "title": title,
-                    "url": url,
-                    "published_date": published_date.isoformat() if published_date else None,
-                    "summary": None,  # Could extract if available
-                    "content": None
-                }
-                articles.append(article)
-                
-        except Exception as e:
-            print(f"Error parsing article: {e}")
-            continue
-    
-    return articles
-
 def scrape_bensbites():
-    """Main scraper function"""
-    print(f"[{SOURCE_NAME}] Starting scrape...")
+    """Main scraper function using RSS"""
+    print(f"[{SOURCE_NAME}] Starting RSS scrape from {RSS_URL}...")
     
-    html = fetch_page(BASE_URL)
-    if not html:
-        print(f"[{SOURCE_NAME}] Failed to fetch page")
+    try:
+        # Parse RSS Feed
+        feed = feedparser.parse(RSS_URL)
+        
+        if feed.bozo:
+            print(f"[{SOURCE_NAME}] Warning: Feed parsing error: {feed.bozo_exception}")
+            # Continue anyway as feedparser often parses despite errors
+            
+        if not feed.entries:
+            print(f"[{SOURCE_NAME}] No entries found in feed.")
+            return {"source": SOURCE_NAME, "scrape_timestamp": datetime.now().isoformat(), "articles": []}
+            
+        cutoff = get_cutoff_time()
+        articles = []
+        
+        print(f"[{SOURCE_NAME}] Processing {len(feed.entries)} entries...")
+        
+        for entry in feed.entries:
+            try:
+                # Extract fields
+                title = entry.get('title', 'No Title')
+                url = entry.get('link', '')
+                published_parsed = entry.get('published_parsed') or entry.get('updated_parsed')
+                summary = entry.get('summary', '') or entry.get('description', '')
+                
+                # Parse date
+                published_date = None
+                if published_parsed:
+                    published_date = datetime(*published_parsed[:6])
+                elif entry.get('published'):
+                    published_date = date_parser.parse(entry['published'])
+                
+                # Check date cutoff (defaults to inclusion if no date found, to be safe)
+                if not published_date or published_date >= cutoff:
+                    # Clean summary (remove HTML tags if simple display needed, or keep for rich text)
+                    # For now, we'll keep it raw or truncate
+                    clean_summary = summary.split('<')[0] if '<' in summary else summary
+                    clean_summary = clean_summary[:200] + "..." if len(clean_summary) > 200 else clean_summary
+
+                    article = {
+                        "title": title,
+                        "url": url,
+                        "published_date": published_date.isoformat() if published_date else None,
+                        "summary": clean_summary,
+                        "source": SOURCE_NAME
+                    }
+                    articles.append(article)
+            except Exception as e:
+                print(f"[{SOURCE_NAME}] Error processing entry: {e}")
+                continue
+        
+        result = {
+            "source": SOURCE_NAME,
+            "scrape_timestamp": datetime.now().isoformat(),
+            "articles": articles
+        }
+        
+        print(f"[{SOURCE_NAME}] Found {len(articles)} articles from last 24h")
+        return result
+
+    except Exception as e:
+        print(f"[{SOURCE_NAME}] Fatal error: {e}")
         return {"source": SOURCE_NAME, "scrape_timestamp": datetime.now().isoformat(), "articles": []}
-    
-    articles = parse_articles(html)
-    
-    result = {
-        "source": SOURCE_NAME,
-        "scrape_timestamp": datetime.now().isoformat(),
-        "articles": articles
-    }
-    
-    print(f"[{SOURCE_NAME}] Found {len(articles)} articles")
-    return result
 
 if __name__ == "__main__":
     # Run scraper

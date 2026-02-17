@@ -258,6 +258,44 @@ h1 {
     cursor: pointer;
 }
 
+.article-actions {
+    position: absolute;
+    top: var(--space-lg);
+    right: var(--space-lg);
+    z-index: 10;
+}
+
+.save-btn {
+    background: rgba(255, 255, 255, 0.1);
+    border: none;
+    cursor: pointer;
+    color: var(--text-muted);
+    padding: var(--space-xs);
+    border-radius: 50%;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    backdrop-filter: blur(4px);
+}
+
+.save-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+    transform: scale(1.1);
+    color: var(--text-primary);
+}
+
+.save-btn.saved {
+    color: #ff6b6b;
+    background: rgba(255, 107, 107, 0.1);
+}
+
+.save-btn.saved:hover {
+    background: rgba(255, 107, 107, 0.2);
+}
+
 .article-card::before {
     content: '';
     position: absolute;
